@@ -3,7 +3,6 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Slider } from "@/components/ui/slider"
-import Link from 'next/link';
 
 // Utility function to enhance color
 function enhanceColor(r: number, g: number, b: number, contrastFactor: number, saturationFactor: number) {
