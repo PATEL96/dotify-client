@@ -3,6 +3,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Slider } from "@/components/ui/slider"
+import Link from 'next/link';
 
 // Utility function to enhance color
 function enhanceColor(r: number, g: number, b: number, contrastFactor: number, saturationFactor: number) {
@@ -201,10 +202,13 @@ const ImageProcessor = () => {
     };
 
 
-    const handleGridChange = (value: string) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleGridChange = (value: any) => {
         setGridSize(Number(value));
     };
-    const handlePadChange = (value: string) => {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handlePadChange = (value: any) => {
         setPadSize(Number(value));
     };
 
@@ -233,7 +237,7 @@ const ImageProcessor = () => {
                             max={50}
                             step={5}
                             value={[gridSize]}
-                            onValueChange={() => handleGridChange}
+                            onValueChange={handleGridChange}
                             className="w-full"
                         />
                     </div>
@@ -247,7 +251,7 @@ const ImageProcessor = () => {
                             max={5}
                             step={1}
                             value={[PadSize]}
-                            onValueChange={() => handlePadChange}
+                            onValueChange={handlePadChange}
                             className="w-full"
                         />
                     </div>
@@ -271,9 +275,9 @@ const ImageProcessor = () => {
                 <div className='flex items-center justify-center flex-col'>
                     <h2 className="text-xl font-bold">Processed Image:</h2>
                     <Button asChild variant="default" className='m-4'>
-                        <a href={processedImage} download="processed-image.png" >
+                        <Link href={processedImage} download="processed-image.png" >
                             Download Full-Resolution Processed Image
-                        </a>
+                        </Link>
                     </Button>
                     <img src={processedImage} alt="Processed" className="border mb-4" />
                 </div>
