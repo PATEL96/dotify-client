@@ -3,7 +3,6 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Slider } from "@/components/ui/slider"
-import Link from 'next/link';
 
 // Utility function to enhance color
 function enhanceColor(r: number, g: number, b: number, contrastFactor: number, saturationFactor: number) {
@@ -272,9 +271,9 @@ const ImageProcessor = () => {
                 <div className='flex items-center justify-center flex-col'>
                     <h2 className="text-xl font-bold">Processed Image:</h2>
                     <Button asChild variant="default" className='m-4'>
-                        <Link href={processedImage} download="processed-image.png" >
+                        <a href={processedImage} download="processed-image.png" >
                             Download Full-Resolution Processed Image
-                        </Link>
+                        </a>
                     </Button>
                     <img src={processedImage} alt="Processed" className="border mb-4" />
                 </div>
