@@ -273,10 +273,8 @@ const ImageProcessor = () => {
             {processedImage && (
                 <div className='flex items-center justify-center flex-col'>
                     <h2 className="text-xl font-bold">Processed Image:</h2>
-                    <a href={processedImage} download="processed-image.png" >
-                        <Button asChild variant="default" className='m-4'>
-                            Download Full-Resolution Processed Image
-                        </Button>
+                    <a href={processedImage} className='m-5' download="processed-image.png">
+                        <Button variant="default">Download</Button>
                     </a>
                     <img src={processedImage} alt="Processed" className="border mb-4" />
                 </div>
