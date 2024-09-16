@@ -160,7 +160,7 @@ const ImageProcessor = () => {
         if (!dummyCanvas) return;
 
         const ctx = dummyCanvas.getContext('2d');
-        const size = 100;
+        const size = 120;
 
         dummyCanvas.width = size;
         dummyCanvas.height = size;
@@ -172,33 +172,33 @@ const ImageProcessor = () => {
     const drawDynamicCircles = (
         ctx: CanvasRenderingContext2D | null,
         size: number,
-        gridSize: number,
+        gridSize: number, // Now represents the circle radius
         padding: number
     ) => {
         ctx!.clearRect(0, 0, size, size); // Clear previous drawings
 
-        const step = size / gridSize; // Step size for grid based on dynamic grid size
-        let dotRadius = (step - padding) / 2; // Calculate dynamic dot radius based on padding and grid size
+        // The step includes the circle's diameter and padding
+        const step = gridSize * 2 + padding;
 
-        // Ensure the radius is never negative or too small
-        if (dotRadius < 1) {
-            dotRadius = 1; // Set a minimum radius of 1 to avoid too small dots
-        }
+        // Calculate how many circles fit horizontally and vertically in the 100x100 box
+        const circlesInRow = Math.floor(size / step);
+        const circlesInColumn = Math.floor(size / step);
 
-        // Loop to draw circles based on dynamic grid size and padding
-        for (let row = 0; row < gridSize; row++) {
-            for (let col = 0; col < gridSize; col++) {
-                const x = col * step + step / 2; // X-coordinate for circle center
-                const y = row * step + step / 2; // Y-coordinate for circle center
+        // Loop through to draw circles based on calculated number of circles
+        for (let row = 0; row < circlesInColumn; row++) {
+            for (let col = 0; col < circlesInRow; col++) {
+                const x = col * step + gridSize; // X-coordinate for circle center
+                const y = row * step + gridSize; // Y-coordinate for circle center
 
                 // Draw circle
                 ctx!.fillStyle = 'rgb(199, 35, 35)'; // Example color
                 ctx!.beginPath();
-                ctx!.arc(x, y, dotRadius, 0, Math.PI * 2); // Draw circle at calculated position
+                ctx!.arc(x, y, gridSize, 0, Math.PI * 2); // Draw circle with the current radius (gridSize)
                 ctx!.fill();
             }
         }
     };
+
 
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
