@@ -268,7 +268,7 @@ const ImageProcessor = () => {
                     onDrop={handleDrop}
                     onDragLeave={handleDragLeave}
                 >
-                    <Label htmlFor="picture" className="text-lg font-bold text-gray-300 mb-4">Drag & Drop Your Image Here</Label>
+                    <Label htmlFor="picture" className="text-lg font-bold dark:text-gray-300 text-gray-700 mb-4">Drag & Drop Your Image Here</Label>
                     <p className="text-sm text-gray-500 mb-4">or</p>
                     <Input
                         id="picture"
