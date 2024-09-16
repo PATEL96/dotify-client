@@ -3,6 +3,9 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Button } from './ui/button';
 import { Slider } from "@/components/ui/slider"
+import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
+import { useToast } from "@/hooks/use-toast"
+
 
 // Utility function to enhance color
 function enhanceColor(r: number, g: number, b: number, contrastFactor: number, saturationFactor: number) {
@@ -211,6 +214,26 @@ const ImageProcessor = () => {
         setPadSize(Number(value));
     };
 
+    const handleGridMove = (move: boolean) => {
+        if (move && gridSize < 50) {
+            setGridSize(gridSize + 5)
+        }
+        if (!move && gridSize > 5) {
+            setGridSize(gridSize - 5)
+        }
+    }
+
+    const handlePadMove = (move: boolean) => {
+        if (move && PadSize < 5) {
+            setPadSize(PadSize + 1)
+        }
+        if (!move && PadSize > 2) {
+            setPadSize(PadSize - 1)
+        }
+    }
+
+    const { toast } = useToast();
+
     useEffect(() => {
         if (imageSrc) {
             renderPreview();
@@ -230,29 +253,45 @@ const ImageProcessor = () => {
                         <Label htmlFor="grid-size" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             Grid Size: {gridSize}
                         </Label>
-                        <Slider
-                            id="grid-size"
-                            min={5}
-                            max={50}
-                            step={5}
-                            value={[gridSize]}
-                            onValueChange={handleGridChange}
-                            className="w-full"
-                        />
+                        <div className='flex items-center w-[350px] justify-evenly'>
+                            <Button variant="outline" onClick={() => handleGridMove(false)}>
+                                <MinusCircledIcon height={20} width={20} />
+                            </Button>
+                            <Slider
+                                id="grid-size"
+                                min={5}
+                                max={50}
+                                step={5}
+                                value={[gridSize]}
+                                onValueChange={handleGridChange}
+                                className="w-[200px]"
+                            />
+                            <Button variant="outline" onClick={() => handleGridMove(true)}>
+                                <PlusCircledIcon height={20} width={20} />
+                            </Button>
+                        </div>
                     </div>
                     <div className='m-3'>
                         <Label htmlFor="pad-size" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                             Pad Size: {PadSize}
                         </Label>
-                        <Slider
-                            id="pad-size"
-                            min={2}
-                            max={5}
-                            step={1}
-                            value={[PadSize]}
-                            onValueChange={handlePadChange}
-                            className="w-full"
-                        />
+                        <div className='flex items-center w-[350px] justify-evenly'>
+                            <Button variant="outline" onClick={() => handlePadMove(false)}>
+                                <MinusCircledIcon height={20} width={20} />
+                            </Button>
+                            <Slider
+                                id="pad-size"
+                                min={2}
+                                max={5}
+                                step={1}
+                                value={[PadSize]}
+                                onValueChange={handlePadChange}
+                                className="w-[200px]"
+                            />
+                            <Button variant="outline" onClick={() => handlePadMove(true)}>
+                                <PlusCircledIcon height={20} width={20} />
+                            </Button>
+                        </div>
                     </div>
                     <div className="flex m-3 items-center justify-center flex-col">
                         <div>
@@ -263,7 +302,16 @@ const ImageProcessor = () => {
                 </div>
                 <div>
                     <Button
-                        onClick={() => { processImage(); renderPreview(); }}
+                        onClick={() => {
+                            if (imageSrc == null) {
+                                toast({
+                                    variant: "destructive",
+                                    title: "Error Processing",
+                                    description: "Please select a Image file to continue...",
+                                })
+                            }
+                            processImage(); renderPreview();
+                        }}
                         variant="default"
                     >
                         Process Image
