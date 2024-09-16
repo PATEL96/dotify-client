@@ -59,18 +59,8 @@ const ImageProcessor = () => {
     const [PadSize, setPadSize] = useState<number>(2);
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const processingCanvasRef = useRef<HTMLCanvasElement | null>(null);
-    const dummyCanvasRef = useRef<HTMLCanvasElement | null>(null); // Reference for dummy canvas
-
-    const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                setImageSrc(e.target?.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+    const dummyCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [isDragging, setIsDragging] = useState(false); // Reference for dummy canvas
 
     const processImage = () => {
         const processingCanvas = processingCanvasRef.current;
@@ -232,6 +222,33 @@ const ImageProcessor = () => {
         }
     }
 
+    const handleImageUpload = (file: File | null) => {
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setImageSrc(e.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(false);
+
+        const file = event.dataTransfer.files?.[0];
+        handleImageUpload(file);
+    };
+
+    const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        setIsDragging(true); // Change the drop zone style when dragging
+    };
+
+    const handleDragLeave = () => {
+        setIsDragging(false); // Reset style when not dragging
+    };
+
     const { toast } = useToast();
 
     useEffect(() => {
@@ -242,11 +259,30 @@ const ImageProcessor = () => {
     }, [imageSrc, gridSize, PadSize]);
 
     return (
-        <div className="p-4">
-            <div className="sm:w-[50svw] w-[90svw] items-start m-5 justify-evenly flex flex-col gap-3">
-                <div>
-                    <Label htmlFor="picture">Your Image</Label>
-                    <Input id="picture" type="file" onChange={handleImageUpload} />
+        <div className="flex items-center justify-center w-full flex-col">
+            <div className="sm:w-[50svw] w-[90svw] items-start justify-evenly flex flex-col">
+                <div
+                    className={`border-4 ${isDragging ? 'border-blue-500 bg-[#1c1c1caa]' : 'border-dark bg-dark'} 
+                    rounded-lg text-center sm:w-[50svw] w-[90svw] h-64 flex flex-col justify-center items-center transition-all duration-300 ease-in-out`}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onDragLeave={handleDragLeave}
+                >
+                    <Label htmlFor="picture" className="text-lg font-bold text-gray-300 mb-4">Drag & Drop Your Image Here</Label>
+                    <p className="text-sm text-gray-500 mb-4">or</p>
+                    <Input
+                        id="picture"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e.target.files?.[0] || null)}
+                        className="hidden"
+                    />
+                    <Button
+                        variant="default"
+                        onClick={() => document.getElementById('picture')?.click()}
+                    >
+                        Click to Upload
+                    </Button>
                 </div>
                 <div className="w-[150px]">
                     <div className='m-3'>
@@ -319,18 +355,18 @@ const ImageProcessor = () => {
                 </div>
             </div>
             {processedImage && (
-                <div className='flex items-center justify-center flex-col'>
+                <div className='flex items-center justify-center m-5  flex-col'>
                     <h2 className="text-xl font-bold">Processed Image:</h2>
                     <a href={processedImage} className='m-5' download="processed-image.png">
                         <Button variant="default">Download</Button>
                     </a>
-                    <img src={processedImage} alt="Processed" className="border mb-4" />
+                    <img src={processedImage} alt="Processed" className="border m-4 rounded-sm" />
                 </div>
             )}
 
             {imageSrc && (
-                <div className='flex items-center justify-center flex-col'>
-                    <canvas ref={previewCanvasRef} className="border m-5" />
+                <div className='flex items-center justify-center  flex-col'>
+                    <canvas ref={previewCanvasRef} className="border m-5 rounded-sm" />
                 </div>
             )}
 
