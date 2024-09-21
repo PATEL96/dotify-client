@@ -60,7 +60,8 @@ const ImageProcessor = () => {
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const processingCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const dummyCanvasRef = useRef<HTMLCanvasElement | null>(null);
-    const [isDragging, setIsDragging] = useState(false); // Reference for dummy canvas
+    const [isDragging, setIsDragging] = useState(false);
+    const [backgroundColor, setBackgroundColor] = useState<string>("#000000");
 
     const processImage = () => {
         const processingCanvas = processingCanvasRef.current;
@@ -79,7 +80,7 @@ const ImageProcessor = () => {
             processingCanvas.height = img.height;
 
             // Fill background with black
-            processingCtx!.fillStyle = 'rgb(0,0,0)';
+            processingCtx!.fillStyle = backgroundColor;
             processingCtx!.fillRect(0, 0, img.width, img.height);
 
             // Draw the original image onto an invisible canvas
@@ -169,6 +170,8 @@ const ImageProcessor = () => {
         padding: number
     ) => {
         ctx!.clearRect(0, 0, size, size); // Clear previous drawings
+        ctx!.fillStyle = backgroundColor;
+        ctx!.fillRect(0, 0, size, size);
 
         // The step includes the circle's diameter and padding
         const step = gridSize * 2 + padding;
@@ -256,7 +259,7 @@ const ImageProcessor = () => {
             renderPreview();
         }
         renderDummyEffect(); // Update dummy effect when grid size changes
-    }, [imageSrc, gridSize, PadSize]);
+    }, [imageSrc, gridSize, PadSize,backgroundColor]);
 
     return (
         <div className="flex items-center justify-center w-full flex-col">
@@ -328,6 +331,17 @@ const ImageProcessor = () => {
                                 <PlusCircledIcon height={20} width={20} />
                             </Button>
                         </div>
+                    </div>
+                    <div className='m-3'>
+                        <Label htmlFor="pad-size" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            BVackground Color: {backgroundColor}
+                        </Label>
+                        <Input
+                            type="color"
+                            value={backgroundColor}
+                            onChange={(e) => setBackgroundColor(e.target.value)}
+                            className="w-16 h-16 cursor-pointer"
+                        />
                     </div>
                     <div className="flex m-3 items-center justify-center flex-col">
                         <div>
