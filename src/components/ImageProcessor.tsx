@@ -127,6 +127,23 @@ const ImageProcessor = () => {
                 });
             }
         };
+        if (imageSrc == null || imageSrc == undefined) {
+            toast({
+                variant: "destructive",
+                title: "⚠️ Error Processing. 404 File Not Found...",
+                description: "Please select a Image file to continue...",
+            })
+        } else {
+            toast({
+                variant: "default",
+                title: "You Liked the Image, now you can Support me to build more Like this!!",
+                description: (
+                    <div className='flex items-center justify-center'>
+                        <img src='../images/bmc_qr.png' alt='BUy me A Coffee' className="h-[200px] m-2 rounded-sm shadow-lg shadow-[#1c1c1caa] dark:shadow-[#ffffff5b]" />
+                    </div>
+                ),
+            })
+        }
     };
 
     const renderPreview = () => {
@@ -258,8 +275,8 @@ const ImageProcessor = () => {
         if (imageSrc) {
             renderPreview();
         }
-        renderDummyEffect(); // Update dummy effect when grid size changes
-    }, [imageSrc, gridSize, PadSize,backgroundColor]);
+        renderDummyEffect();
+    }, [imageSrc, gridSize, PadSize, backgroundColor]);
 
     return (
         <div className="flex items-center justify-center w-full flex-col">
@@ -353,14 +370,8 @@ const ImageProcessor = () => {
                 <div>
                     <Button
                         onClick={() => {
-                            if (imageSrc == null) {
-                                toast({
-                                    variant: "destructive",
-                                    title: "Error Processing",
-                                    description: "Please select a Image file to continue...",
-                                })
-                            }
-                            processImage(); renderPreview();
+                            processImage();
+                            renderPreview();
                         }}
                         variant="default"
                     >
