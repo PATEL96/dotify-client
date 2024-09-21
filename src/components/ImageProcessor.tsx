@@ -140,7 +140,7 @@ const ImageProcessor = () => {
                 title: "You Liked the Image, now you can Support me to build more Like this!!",
                 description: (
                     <div className='flex items-center justify-center'>
-                        <Link href="buymeacoffee.com/patel96" target='_blank'>
+                        <Link href="https://buymeacoffee.com/patel96" target='_blank'>
                             <img src='../images/bmc_qr.png' alt='BUy me A Coffee' className="h-[200px] m-2 rounded-sm shadow-lg shadow-[#1c1c1caa] dark:shadow-[#ffffff5b]" />
                         </Link>
                     </div>
