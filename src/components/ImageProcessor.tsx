@@ -141,7 +141,7 @@ const ImageProcessor = () => {
                 description: (
                     <div className='flex items-center justify-center'>
                         <Link href="https://buymeacoffee.com/patel96" target='_blank'>
-                            <img src='../images/bmc_qr.png' alt='BUy me A Coffee' className="h-[200px] m-2 rounded-sm shadow-lg shadow-[#1c1c1caa] dark:shadow-[#ffffff5b]" />
+                            <img src='../images/bmc_qr.png' alt='BUy me A Coffee' className="h-[100px] m-2 rounded-sm shadow-lg shadow-[#1c1c1caa] dark:shadow-[#ffffff5b]" />
                         </Link>
                     </div>
                 ),
