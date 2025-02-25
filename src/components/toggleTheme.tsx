@@ -2,6 +2,7 @@
 // components/ThemeToggle.tsx
 import { SunIcon, MoonIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Button } from './ui/button';
 
 export const ThemeToggleButton = () => {
 	const [theme, setTheme] = useState<'light' | 'dark'>('dark');
@@ -32,8 +33,8 @@ export const ThemeToggleButton = () => {
 	};
 
 	return (
-		<button onClick={toggleTheme}>
+		<Button onClick={toggleTheme} variant={'outline'}>
 			{theme === 'light' ? <MoonIcon /> : <SunIcon />}
-		</button>
+		</Button>
 	);
 };
