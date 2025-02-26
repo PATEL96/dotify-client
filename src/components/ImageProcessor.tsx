@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { Slider } from "@/components/ui/slider"
 import { MinusCircledIcon, PlusCircledIcon } from '@radix-ui/react-icons';
 import { toast } from 'sonner';
+import posthog from "@/lib/posthog";
 
 
 // Utility function to enhance color
@@ -133,6 +134,7 @@ const ImageProcessor = () => {
 			toast.error("Please select a Image file to continue...")
 		} else {
 			toast.success("Processed Successfully")
+			posthog.capture("image_processed", {"comment": "Yay...."});
 		}
 
 	};
