@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useRef, useEffect } from 'react';
@@ -14,10 +15,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import posthog from "@/lib/posthog";
 
-// Utility function to enhance color
-function enhanceColor(r: number, g: number, b: number, contrastFactor: number, saturationFactor: number) {
+// Utility function to enhance color with alpha support
+function enhanceColor(r: number, g: number, b: number, a: number, contrastFactor: number, saturationFactor: number) {
 	const enhanceContrast = (value: number) => {
 		return Math.max(0, Math.min(255, ((value / 255 - 0.5) * contrastFactor + 0.5) * 255));
 	};
@@ -40,25 +42,38 @@ function enhanceColor(r: number, g: number, b: number, contrastFactor: number, s
 		r: Math.floor(saturated.r),
 		g: Math.floor(saturated.g),
 		b: Math.floor(saturated.b),
+		a: a
 	};
 }
 
-// Average color function
+// Average color function with alpha support
 function averageColor(gridData: Uint8ClampedArray, contrastFactor: number, saturationFactor: number) {
-	let r = 0, g = 0, b = 0;
+	let r = 0, g = 0, b = 0, a = 0;
+	let count = 0;
 	const length = gridData.length / 4;
 
 	for (let i = 0; i < gridData.length; i += 4) {
-		r += gridData[i];
-		g += gridData[i + 1];
-		b += gridData[i + 2];
+		// Only include pixels with significant alpha
+		if (gridData[i + 3] > 20) {
+			r += gridData[i];
+			g += gridData[i + 1];
+			b += gridData[i + 2];
+			a += gridData[i + 3];
+			count++;
+		}
 	}
 
-	r = r / length;
-	g = g / length;
-	b = b / length;
+	// If no significant pixels were found, return fully transparent
+	if (count === 0) {
+		return { r: 0, g: 0, b: 0, a: 0 };
+	}
 
-	return enhanceColor(r, g, b, contrastFactor, saturationFactor);
+	r = r / count;
+	g = g / count;
+	b = b / count;
+	a = a / count;
+
+	return enhanceColor(r, g, b, a, contrastFactor, saturationFactor);
 }
 
 // Define export format types
@@ -74,6 +89,7 @@ const ImageProcessor = () => {
 	const dummyCanvasRef = useRef<HTMLCanvasElement | null>(null);
 	const [isDragging, setIsDragging] = useState(false);
 	const [backgroundColor, setBackgroundColor] = useState<string>("#000000");
+	const [useTransparentBg, setUseTransparentBg] = useState<boolean>(false);
 	const [exportQuality, setExportQuality] = useState<number>(80);
 	const [originalImageSize, setOriginalImageSize] = useState<{ width: number, height: number } | null>(null);
 	const [isProcessing, setIsProcessing] = useState<boolean>(false);
@@ -85,6 +101,7 @@ const ImageProcessor = () => {
 		setGridSize(10);
 		setPadSize(2);
 		setBackgroundColor("#000000");
+		setUseTransparentBg(false);
 		setExportQuality(80);
 		setOriginalImageSize(null);
 		setIsProcessing(false);
@@ -113,7 +130,7 @@ const ImageProcessor = () => {
 				img.onerror = () => reject(new Error("Failed to load image"));
 			});
 
-			const processingCtx = processingCanvas.getContext('2d');
+			const processingCtx = processingCanvas.getContext('2d', { alpha: true });
 			const dotRadius = (gridSize - PadSize) / 2;
 			const contrastFactor = 1;
 			const saturationFactor = 1;
@@ -125,13 +142,18 @@ const ImageProcessor = () => {
 			// Store original size for SVG export
 			setOriginalImageSize({ width: img.width, height: img.height });
 
-			// Fill background with selected color
-			processingCtx!.fillStyle = backgroundColor;
-			processingCtx!.fillRect(0, 0, img.width, img.height);
+			// Clear the canvas first
+			processingCtx!.clearRect(0, 0, img.width, img.height);
+
+			// Fill background with selected color if not transparent
+			if (!useTransparentBg) {
+				processingCtx!.fillStyle = backgroundColor;
+				processingCtx!.fillRect(0, 0, img.width, img.height);
+			}
 
 			// Draw the original image onto an invisible canvas
 			const tempCanvas = document.createElement('canvas');
-			const tempCtx = tempCanvas.getContext('2d')!;
+			const tempCtx = tempCanvas.getContext('2d', { alpha: true })!;
 			tempCanvas.width = img.width;
 			tempCanvas.height = img.height;
 			tempCtx.drawImage(img, 0, 0, img.width, img.height);
@@ -161,14 +183,19 @@ const ImageProcessor = () => {
 							}
 						}
 
-						const { r, g, b } = averageColor(new Uint8ClampedArray(gridPixels), contrastFactor, saturationFactor);
-						const circleColor = `rgb(${r}, ${g}, ${b})`;
+						const { r, g, b, a } = averageColor(new Uint8ClampedArray(gridPixels), contrastFactor, saturationFactor);
+
+						// Skip drawing if alpha is too low (transparent area)
+						if (a < 20) continue;
+
+						// Use rgba to include transparency
+						const circleColor = `rgba(${r}, ${g}, ${b}, ${a / 255})`;
 						processingCtx!.fillStyle = circleColor;
 						processingCtx!.beginPath();
 						processingCtx!.arc(x + gridSize / 2, y + gridSize / 2, dotRadius, 0, Math.PI * 2);
 						processingCtx!.fill();
 
-						// Store circle data for SVG export
+						// Store circle data for SVG export with alpha
 						circlesData.push({
 							x: x + gridSize / 2,
 							y: y + gridSize / 2,
@@ -178,7 +205,7 @@ const ImageProcessor = () => {
 					}
 				}
 
-				// Generate SVG
+				// Generate SVG with transparency support
 				const svgUrl = generateSVG(circlesData, img.width, img.height);
 
 				// Generate all formats in parallel
@@ -219,7 +246,7 @@ const ImageProcessor = () => {
 		}
 	};
 
-	// Generate SVG from processed data
+	// Generate SVG from processed data - with transparency support
 	const generateSVG = (
 		circles: Array<{ x: number, y: number, r: number, color: string }>,
 		width: number,
@@ -227,10 +254,12 @@ const ImageProcessor = () => {
 	): string => {
 		let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
 
-		// Add background
-		svgContent += `<rect width="${width}" height="${height}" fill="${backgroundColor}" />`;
+		// Add background if not transparent
+		if (!useTransparentBg) {
+			svgContent += `<rect width="${width}" height="${height}" fill="${backgroundColor}" />`;
+		}
 
-		// Add all circles
+		// Add all circles with alpha support
 		circles.forEach(circle => {
 			svgContent += `<circle cx="${circle.x}" cy="${circle.y}" r="${circle.r}" fill="${circle.color}" />`;
 		});
@@ -247,7 +276,7 @@ const ImageProcessor = () => {
 		const img = new Image();
 		img.src = imageSrc!;
 		img.onload = () => {
-			const previewCtx = previewCanvas?.getContext('2d');
+			const previewCtx = previewCanvas?.getContext('2d', { alpha: true });
 
 			const previewWidth = window.innerWidth - 100; // Adjust preview width
 			const aspectRatio = img.height / img.width;
@@ -266,7 +295,7 @@ const ImageProcessor = () => {
 		const dummyCanvas = dummyCanvasRef.current;
 		if (!dummyCanvas) return;
 
-		const ctx = dummyCanvas.getContext('2d');
+		const ctx = dummyCanvas.getContext('2d', { alpha: true });
 		const size = 120;
 
 		dummyCanvas.width = size;
@@ -282,8 +311,12 @@ const ImageProcessor = () => {
 		padding: number
 	) => {
 		ctx!.clearRect(0, 0, size, size); // Clear previous drawings
-		ctx!.fillStyle = backgroundColor;
-		ctx!.fillRect(0, 0, size, size);
+
+		// Fill background with selected color if not transparent
+		if (!useTransparentBg) {
+			ctx!.fillStyle = backgroundColor;
+			ctx!.fillRect(0, 0, size, size);
+		}
 
 		// The step includes the circle's diameter and padding
 		const step = gridSize * 2 + padding;
@@ -298,8 +331,9 @@ const ImageProcessor = () => {
 				const x = col * step + gridSize; // X-coordinate for circle center
 				const y = row * step + gridSize; // Y-coordinate for circle center
 
-				// Draw circle
-				ctx!.fillStyle = 'rgb(199, 35, 35)'; // Example color
+				// Draw circle with varying alpha to demonstrate transparency
+				const alpha = (row + col) % 3 === 0 ? 0.5 : 1; // Add some variation in alpha for demo
+				ctx!.fillStyle = `rgba(199, 35, 35, ${alpha})`; // Example color with alpha
 				ctx!.beginPath();
 				ctx!.arc(x, y, gridSize, 0, Math.PI * 2); // Draw circle with the current radius (gridSize)
 				ctx!.fill();
@@ -379,7 +413,7 @@ const ImageProcessor = () => {
 			renderPreview();
 		}
 		renderDummyEffect();
-	}, [imageSrc, gridSize, PadSize, backgroundColor]);
+	}, [imageSrc, gridSize, PadSize, backgroundColor, useTransparentBg]);
 
 	return (
 		<div className="flex items-center justify-center w-full flex-col">
@@ -454,16 +488,30 @@ const ImageProcessor = () => {
 							</div>
 						</div>
 						<div className='m-3'>
-							<Label htmlFor="background-color" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-								Background Color: {backgroundColor}
-							</Label>
-							<Input
-								id="background-color"
-								type="color"
-								value={backgroundColor}
-								onChange={(e) => setBackgroundColor(e.target.value)}
-								className="w-16 h-16 cursor-pointer"
-							/>
+							<div className="flex items-center mb-2">
+								<Checkbox
+									id="transparent-bg"
+									checked={useTransparentBg}
+									onCheckedChange={(checked) => setUseTransparentBg(checked === true)}
+								/>
+								<Label htmlFor="transparent-bg" className="ml-2 text-sm font-medium cursor-pointer">
+									Use Transparent Background
+								</Label>
+							</div>
+							{!useTransparentBg && (
+								<div>
+									<Label htmlFor="background-color" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+										Background Color: {backgroundColor}
+									</Label>
+									<Input
+										id="background-color"
+										type="color"
+										value={backgroundColor}
+										onChange={(e) => setBackgroundColor(e.target.value)}
+										className="w-16 h-16 cursor-pointer"
+									/>
+								</div>
+							)}
 						</div>
 					</div>
 
@@ -487,7 +535,13 @@ const ImageProcessor = () => {
 							<div>
 								Preview: 120px x 120px
 							</div>
-							<canvas ref={dummyCanvasRef} className="border" width="120" height="120" />
+							<div className="border" style={{
+								width: "120px",
+								height: "120px",
+								backgroundImage: useTransparentBg ? 'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC45bDN+TgAAAEFJREFUOE9j+P//P0UYTNjY2PyHYmxADDYAGcQG0mwANoAMBNNh0DAgoI/cAFJBfwOIwUNpIEHRQPq9xHtpJDQw/38GAPeEFXGblvjfAAAAAElFTkSuQmCC")' : ''
+							}}>
+								<canvas ref={dummyCanvasRef} width="120" height="120" />
+							</div>
 						</div>
 					</div>
 				</div>
@@ -553,27 +607,31 @@ const ImageProcessor = () => {
 
 					{/* Display the currently selected format */}
 					{processedImages[displayFormat] && (
-						displayFormat === 'svg' ? (
-							<object
-								data={processedImages.svg}
-								type="image/svg+xml"
-								className="border m-4 rounded-sm max-w-full"
-								style={{
-									width: originalImageSize?.width,
-									height: originalImageSize?.height,
-									maxWidth: '100%',
-									maxHeight: "100%"
-								}}
-							>
-								SVG image
-							</object>
-						) : (
-							<img
-								src={processedImages[displayFormat]}
-								alt={`Processed (${displayFormat})`}
-								className="border m-4 rounded-sm max-w-full"
-							/>
-						)
+						<div className="border m-4 rounded-sm" style={{
+							backgroundImage: useTransparentBg ? 'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAcGFpbnQubmV0IDQuMC45bDN+TgAAAEFJREFUOE9j+P//P0UYTNjY2PyHYmxADDYAGcQG0mwANoAMBNNh0DAgoI/cAFJBfwOIwUNpIEHRQPq9xHtpJDQw/38GAPeEFXGblvjfAAAAAElFTkSuQmCC")' : ''
+						}}>
+							{displayFormat === 'svg' ? (
+								<object
+									data={processedImages.svg}
+									type="image/svg+xml"
+									className="max-w-full"
+									style={{
+										width: originalImageSize?.width,
+										height: originalImageSize?.height,
+										maxWidth: '100%',
+										maxHeight: "100%"
+									}}
+								>
+									SVG image
+								</object>
+							) : (
+								<img
+									src={processedImages[displayFormat]}
+									alt={`Processed (${displayFormat})`}
+									className="max-w-full"
+								/>
+							)}
+						</div>
 					)}
 				</div>
 			)}
